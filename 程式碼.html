@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Risk & Strategy Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                <h1 class="text-xl font-bold tracking-wider text-white">SMC & Risk Simulator</h1>
+            </div>
+            <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">Vibe Coding Edition</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 w-full flex-grow">
+        
+        <!-- 左側：風控計算面板 -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+                    <span>📊</span> 智慧風控計算機
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">帳戶總資本 (USDT)</label>
+                        <input type="number" id="capital" value="10000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">單筆風險承受比例 (%)</label>
+                        <input type="number" id="riskPercent" value="1" step="0.1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">進場價 (Entry)</label>
+                            <input type="number" id="entryPrice" value="65000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">停損價 (Stop Loss)</label>
+                            <input type="number" id="stopLoss" value="64000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">指盈價 (Take Profit)</label>
+                        <input type="number" id="takeProfit" value="68000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="calculateRisk()" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-emerald-900/30">
+                計算倉位與風險
+            </button>
+        </section>
+
+        <!-- 右側：計算結果與互動模擬圖表區 -->
+        <section class="lg:col-span-2 space-y-6">
+            <!-- 結果卡片 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                    <p class="text-xs text-slate-400">建議倉位大小 (Position Size)</p>
+                    <p id="resPositionSize" class="text-2xl font-bold text-white mt-2">--</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                    <p class="text-xs text-slate-400">預期虧損金額 (Risk Amount)</p>
+                    <p id="resRiskAmount" class="text-2xl font-bold text-rose-400 mt-2">--</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                    <p class="text-xs text-slate-400">盈虧比 (R:R Ratio)</p>
+                    <p id="resRR" class="text-2xl font-bold text-emerald-400 mt-2">--</p>
+                </div>
+            </div>
+
+            <!-- 互動模擬區 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                        <span>⚡</span> 價格行為快速模擬
+                    </h2>
+                    <span id="marketStatus" class="text-xs px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">等待進場</span>
+                </div>
+                
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 text-center space-y-4">
+                    <p class="text-slate-400 text-sm">點擊下方按鈕進行隨機市場回測，測試你的策略勝率！</p>
+                    <div class="text-4xl font-mono font-bold tracking-widest text-white" id="simulatedPrice">65,000.00</div>
+                    
+                    <div class="flex justify-center gap-4 pt-2">
+                        <button onclick="runSimulation('long')" class="bg-emerald-600/20 border border-emerald-500/50 hover:bg-emerald-600 text-emerald-300 hover:text-white px-6 py-2.5 rounded-xl font-medium transition">
+                            🟢 做多 (Long)
+                        </button>
+                        <button onclick="runSimulation('short')" class="bg-rose-600/20 border border-rose-500/50 hover:bg-rose-600 text-rose-300 hover:text-white px-6 py-2.5 rounded-xl font-medium transition">
+                            🔴 做空 (Short)
+                        </button>
+                    </div>
+                    <div id="simResult" class="text-sm font-medium pt-2 h-6 text-slate-400"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        Vibe Coding Assignment &copy; 2026. Built with AI Assistance.
+    </footer>
+
+    <!-- JavaScript 互動邏輯 -->
+    <script>
+        function calculateRisk() {
+            const capital = parseFloat(document.getElementById('capital').value);
+            const riskPercent = parseFloat(document.getElementById('riskPercent').value);
+            const entry = parseFloat(document.getElementById('entryPrice').value);
+            const sl = parseFloat(document.getElementById('stopLoss').value);
+            const tp = parseFloat(document.getElementById('takeProfit').value);
+
+            if (!capital || !riskPercent || !entry || !sl || !tp) {
+                alert('請完整填寫所有欄位！');
+                return;
+            }
+
+            const riskAmount = capital * (riskPercent / 100);
+            const riskPerUnit = Math.abs(entry - sl);
+            const positionSize = riskAmount / riskPerUnit;
+            const rewardPerUnit = Math.abs(tp - entry);
+            const rrRatio = rewardPerUnit / riskPerUnit;
+
+            document.getElementById('resPositionSize').innerText = positionSize.toFixed(4) + " 单位";
+            document.getElementById('resRiskAmount').innerText = "$" + riskAmount.toFixed(2);
+            document.getElementById('resRR5') || (document.getElementById('resRR').innerText = "1 : " + rrRatio.toFixed(2));
+        }
+
+        function runSimulation(type) {
+            const entry = parseFloat(document.getElementById('entryPrice').value) || 65000;
+            const randomDelta = (Math.random() - 0.48) * 1500; // 模擬隨機價格波動
+            const finalPrice = entry + randomDelta;
+            
+            document.getElementById('simulatedPrice').innerText = finalPrice.toFixed(2);
+
+            let win = false;
+            if (type === 'long') {
+                win = finalPrice > entry;
+            } else {
+                win = finalPrice < entry;
+            }
+
+            const resDiv = document.getElementById('simResult');
+            const statusBadge = document.getElementById('marketStatus');
+
+            if (win) {
+                resDiv.innerHTML = `<span class="text-emerald-400 font-bold">🎉 交易成功！價格朝預期方向移動 (+${Math.abs(randomDelta).toFixed(2)})</span>`;
+                statusBadge.className = "text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                statusBadge.innerText = "獲利平倉";
+            } else {
+                resDiv.innerHTML = `<span class="text-rose-400 font-bold">💥 觸發停損！價格反向波動 (-${Math.abs(randomDelta).toFixed(2)})</span>`;
+                statusBadge.className = "text-xs px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                statusBadge.innerText = "停損出場";
+            }
+        }
+
+        // 頁面載入時先執行一次計算
+        window.onload = calculateRisk;
+    </script>
+</body>
+</html>
